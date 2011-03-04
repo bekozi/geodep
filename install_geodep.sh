@@ -13,7 +13,7 @@ PROJ=4.7.0
 GEOS=3.2.2
 GDAL=1.8.0
 POSTGRES=8.4
-POSTGIS=1.5.3
+POSTGIS=1.5.2
 
 ## DEPENDENT VARIABLES --------------------------------------
 
@@ -102,13 +102,15 @@ fn_install_gdal()
 fn_install_postgis()
 {
     sudo apt-get install -y postgresql postgresql-server-dev-$POSTGRES libpq-dev
+    sudo apt-get install -y libxml2 libxml2-dev
+    sudo apt-get install -y libcfitsio3 libcfitsio3-dev
     b="postgis"
     bname=$b-$POSTGIS
-    fn_mksrcnav $b $POSTGIS
+    mkdir -p $IPOSTGIS
+    cd $IPOSTGIS
     fn_wget http://postgis.refractions.net/download/postgis-$POSTGIS.tar.gz
     fn_untarnav postgis-$POSTGIS.tar.gz $bname
-    mkdir -p $IPOSTGIS
-    sudo ./configure --prefix=$IPOSTGIS --with-geos=$IGEOS/bin/geos-config --with-projdir=$IPROJ
+    sudo ./configure --with-geosconfig=$IGEOS/bin/geos-config --with-projdir=$IPROJ
     sudo make
     sudo make install
 
@@ -124,6 +126,7 @@ fn_install_postgis()
 ## MAIN -----------------------------------------------------
 
 # upgrade system
+sudo apt-get update
 sudo apt-get upgrade
 # install dependencies
 sudo apt-get install -y gcc
@@ -133,5 +136,5 @@ sudo apt-get install -y wget
 
 fn_install_proj
 fn_install_geos
-fn_install_gdal
 fn_install_postgis
+fn_install_gdal
