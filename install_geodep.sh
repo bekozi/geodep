@@ -5,9 +5,9 @@
 ## INSTALL SETTINGS -----------------------------------------
 
 # path to directory where src files should be downloaded
-DIRSRC=/tmp/src
-# path to virtual environment directory
-DIRVENV=/tmp/virtual
+DIRSRC=/usr/local/src
+# path to src directory
+INSTALLDIR=/usr/local
 # versions of packages to install
 PROJ=4.7.0
 GEOS=3.2.2
@@ -17,11 +17,10 @@ POSTGIS=1.5.2
 
 ## DEPENDENT VARIABLES --------------------------------------
 
-VEBASE=$DIRVENV/bin
-IPROJ=$VEBASE/proj/$PROJ
-IGEOS=$VEBASE/geos/$GEOS
-IGDAL=$VEBASE/gdal/$GDAL
-IPOSTGIS=$VEBASE/postgis/$POSTGIS
+IPROJ=$INSTALLDIR/proj/$PROJ
+IGEOS=$INSTALLDIR/geos/$GEOS
+IGDAL=$INSTALLDIR/gdal/$GDAL
+IPOSTGIS=$INSTALLDIR/postgis/$POSTGIS
 POSTGIS_TEMPLATE=postgis-$POSTGIS-template
 
 ## FUNCTIONS ------------------------------------------------
@@ -52,13 +51,12 @@ fn_mksrcnav()
 
 fn_ldconfig()
 {
-    sudo sh -c "echo $1/lib > /etc/ld.so.conf.d/proj.conf"
+    sudo sh -c "echo $1'/lib' > /etc/ld.so.conf.d/$2.conf"
     sudo ldconfig
 }
 
 fn_install_proj()
 {
-    b="proj"
     bname=proj-$PROJ
     fn_mksrcnav $b $PROJ
     fn_wget http://download.osgeo.org/proj/$bname.tar.gz
@@ -71,11 +69,11 @@ fn_install_proj()
     sudo ./configure --prefix=$IPROJ
     sudo make
     sudo make install
+    fn_ldconfig $IPROJ "proj"
 }
 
 fn_install_geos()
 {
-    b="geos"
     bname=geos-$GEOS
     fn_mksrcnav "geos" $GEOS
     fn_wget http://download.osgeo.org/geos/$bname.tar.bz2
@@ -84,28 +82,30 @@ fn_install_geos()
     sudo ./configure --prefix=$IGEOS
     sudo make
     sudo make install
+    fn_ldconfig $IGEOS "geos"
 }
 
 fn_install_gdal()
 {
-    b="gdal"
     bname=gdal-$GDAL
-    fn_mksrcnav $b $GDAL
+    fn_mksrcnav "gdal" $GDAL
     fn_wget http://download.osgeo.org/gdal/gdal-$GDAL.tar.gz
     fn_untarnav gdal-$GDAL.tar.gz $bname
     mkdir -p $IGDAL
     sudo ./configure --prefix=$IGDAL --with-geos=$IGEOS/bin/geos-config
     sudo make
     sudo make install
+    sudo sh -c "echo $IGDAL'/lib' > /etc/ld.so.conf.d/gdal.conf"
+    sudo ldconfig
 }
 
 fn_install_postgis()
 {
     sudo apt-get install -y postgresql postgresql-server-dev-$POSTGRES libpq-dev
     sudo apt-get install -y libxml2 libxml2-dev
-    sudo apt-get install -y libcfitsio3 libcfitsio3-dev
-    b="postgis"
-    bname=$b-$POSTGIS
+    #sudo apt-get install -y libcfitsio3 libcfitsio3-dev
+
+    bname=postgis-$POSTGIS
     mkdir -p $IPOSTGIS
     cd $IPOSTGIS
     fn_wget http://postgis.refractions.net/download/postgis-$POSTGIS.tar.gz
@@ -126,8 +126,8 @@ fn_install_postgis()
 ## MAIN -----------------------------------------------------
 
 # upgrade system
-sudo apt-get update
-sudo apt-get upgrade
+sudo apt-get -y update
+sudo apt-get -y upgrade
 # install dependencies
 sudo apt-get install -y gcc
 sudo apt-get install -y g++
